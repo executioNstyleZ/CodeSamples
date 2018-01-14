@@ -1,0 +1,2 @@
+This is a sample from a 'Uotel' system which was meant to mimic a website making online reservations for
+a hotel system. The back-end consisted of Java and SQL and the front end was JavaScript and HTML.

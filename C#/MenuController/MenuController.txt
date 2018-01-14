@@ -1,0 +1,218 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+
+/// <summary>
+/// This scripts controls transitions on the main menu
+/// after a button has been clicked, for the purpose of
+/// adding fading
+/// </summary>
+public class MenuController : MonoBehaviour {
+
+    public GameObject title;
+    public GameObject PressAnyKeyPanel;
+    public GameObject MenuPanel;
+    public GameObject OptionsPanel;
+    public GameObject ControlsPanel;
+    public GameObject SoundPanel;
+    public float fadeSpeed = 1.0f;
+
+    private bool fadingOutInProcess;
+    private bool fadingInInProcess;
+    private bool onTitleScreen; 
+
+	// Use this for initialization
+	void Start () {
+        onTitleScreen = true;
+        title.gameObject.SetActive(true);
+        PressAnyKeyPanel.gameObject.SetActive(true);
+        MenuPanel.gameObject.SetActive(false);
+        ControlsPanel.gameObject.SetActive(false);
+        OptionsPanel.gameObject.SetActive(false);
+        SoundPanel.gameObject.SetActive(false);
+
+        fadingOutInProcess = false;
+        fadingInInProcess = false;
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        // handles the "press any key" event from the initial start screen
+        if (onTitleScreen)
+        {
+            if (Input.anyKey)
+            {
+                FadeToMenu();
+                onTitleScreen = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// handles the transition from "press any key" screen
+    /// to the main menu
+    /// </summary>
+    public void FadeToMenu()
+    {
+        //if we are not already fading someting in or out
+        if (!fadingInInProcess && !fadingOutInProcess)
+        {
+            //sound fx
+            SoundManager.Instance.playMenuClick();
+
+            //fade out pressanykey screen
+            StartCoroutine(FadeOutPanel(PressAnyKeyPanel));
+
+            //fade in menu
+            StartCoroutine(FadeInPanel(MenuPanel));
+        }
+    }
+
+    /// <summary>
+    /// handles the transition from the main menu to starting the game
+    /// </summary>
+    public void MainMenuStart()
+    {
+        if(!fadingInInProcess && !fadingOutInProcess)
+        {
+            //sound fx
+            SoundManager.Instance.playMenuStartClicked();
+
+            //change menu fade speed to that of loading screen
+            fadeSpeed = LevelManager.Instance.getLoadingFadeSpeed();
+
+            //fade out menu and title
+            StartCoroutine(FadeOutPanel(MenuPanel));
+            StartCoroutine(FadeOutPanel(title));
+
+            //set current day and start loading the scene
+            GameManager.gameManager.setCurrentDay(1);
+            LevelManager.Instance.startLoadSpecificScene("Town");
+        }
+    }
+
+    public void MainMenuOptionsClicked()
+    {
+
+        if (!fadingInInProcess && !fadingOutInProcess)
+        {
+            SoundManager.Instance.playMenuClick();
+
+            //fade out main menu screen
+            StartCoroutine(FadeOutPanel(MenuPanel));
+
+            //fade in options
+            StartCoroutine(FadeInPanel(OptionsPanel));
+
+            //fade in controls
+            StartCoroutine(FadeInPanel(ControlsPanel));
+        }
+    }
+
+    public void MainMenuOptionsBackClicked()
+    {
+        if (!fadingInInProcess && !fadingOutInProcess)
+        {
+            SoundManager.Instance.playMenuClick();
+
+            //fade out controls or sound if applicable
+            if (ControlsPanel.gameObject.activeSelf == true)
+            {
+                StartCoroutine(FadeOutPanel(ControlsPanel));
+
+            }
+            else if(SoundPanel.gameObject.activeSelf == true)
+            {
+                StartCoroutine(FadeOutPanel(SoundPanel));
+            }
+
+            //fade out options
+            StartCoroutine(FadeOutPanel(OptionsPanel));
+
+            //fade in menu
+            StartCoroutine(FadeInPanel(MenuPanel));
+        }
+    }
+
+    public void OptionsMenuControlsClicked()
+    {
+        if(!fadingInInProcess || !fadingOutInProcess)
+        {
+            if(ControlsPanel.gameObject.activeSelf == false)
+            {
+                SoundManager.Instance.playMenuClick();
+
+                //fade out sound
+                StartCoroutine(FadeOutPanel(SoundPanel));
+
+                //fade in controls
+                StartCoroutine(FadeInPanel(ControlsPanel));
+            }
+        }
+    }
+
+    public void OptionsMenuSoundClicked()
+    {
+        if (!fadingInInProcess || !fadingOutInProcess)
+        {
+            if(SoundPanel.gameObject.activeSelf == false)
+            {
+                SoundManager.Instance.playMenuClick();
+
+                //fade out controls
+                StartCoroutine(FadeOutPanel(ControlsPanel));
+
+                //fade in sound
+                StartCoroutine(FadeInPanel(SoundPanel));
+            }
+        }
+    }
+
+    /// <summary>
+    /// main menu->quit game
+    /// </summary>
+    public void MainMenuQuit()
+    {
+        if(!fadingInInProcess && !fadingOutInProcess)
+        {
+            SoundManager.Instance.playMenuClick();
+
+            Application.Quit();
+
+        }
+    }
+
+    IEnumerator FadeOutPanel(GameObject panel)
+    {
+        fadingOutInProcess = true;
+        CanvasGroup canvasGrp = panel.GetComponent<CanvasGroup>();
+        while(canvasGrp.alpha > 0)
+        {
+            canvasGrp.alpha -= Time.deltaTime * fadeSpeed;
+            yield return null;
+        }
+
+        fadingOutInProcess = false;
+        panel.gameObject.SetActive(false);
+
+        yield return null;
+    }
+
+    IEnumerator FadeInPanel(GameObject panel)
+    {
+        fadingInInProcess = true;
+
+        CanvasGroup canvasGrp = panel.GetComponent<CanvasGroup>();
+        canvasGrp.alpha = 0.0f;
+        panel.gameObject.SetActive(true);
+        while(canvasGrp.alpha < 1)
+        {
+            canvasGrp.alpha += Time.deltaTime * fadeSpeed;
+            yield return null;
+        }
+        fadingInInProcess = false;
+        yield return null;
+    }
+}
